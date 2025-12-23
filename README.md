@@ -1,3 +1,7 @@
+<div align="center">
+<img src="banner.png" alt="Midnight Market Banner" width="800"/>
+</div>
+
 # Midnight Market
 
 A modern cryptocurrency market dashboard featuring real-time data, interactive charts, and AI-powered insights. Track blue-chip cryptocurrencies and memecoins across multiple blockchains with comprehensive market analysis tools.
