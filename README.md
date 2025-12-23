@@ -1,7 +1,3 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 # Midnight Market
 
 A modern cryptocurrency market dashboard featuring real-time data, interactive charts, and AI-powered insights. Track blue-chip cryptocurrencies and memecoins across multiple blockchains with comprehensive market analysis tools.
