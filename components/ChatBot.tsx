@@ -127,6 +127,13 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([
+    "Current market analysis?",
+    "Next Bitcoin move?",
+    "Trending memecoins?",
+    "Institutional sentiment?"
+  ]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -138,12 +145,52 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
     }
   }, [messages, isTyping]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || isTyping) return;
+  useEffect(() => {
+    if (isOpen && messages.length === 0) {
+      fetchDynamicSuggestions();
+    }
+  }, [isOpen]);
+
+  const fetchDynamicSuggestions = async () => {
+    setLoadingSuggestions(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: "Generate 4 short, interesting, and timely questions a crypto trader would ask about current market activity today. Return them as a JSON array of strings.",
+        config: {
+          tools: [{ googleSearch: {} }],
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              suggestions: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+              }
+            },
+            required: ['suggestions']
+          }
+        },
+      });
+      const data = JSON.parse(response.text || '{}');
+      if (data.suggestions && data.suggestions.length > 0) {
+        setSuggestions(data.suggestions);
+      }
+    } catch (e) {
+      console.error("Failed to fetch suggestions", e);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const sendMessage = async (overrideInput?: string) => {
+    const textToSend = overrideInput || input;
+    if (!textToSend.trim() || isTyping) return;
 
     const userMessage: Message = {
       role: 'user',
-      text: input,
+      text: textToSend,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
@@ -155,7 +202,7 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: input,
+        contents: textToSend,
         config: {
           tools: [{ googleSearch: {} }],
           systemInstruction: "You are the 'Midnight Market' terminal assistant. Provide expert, concise cryptocurrency and market analysis. Use a professional, slightly cyber-noir tone. Keep responses structured and punchy. If you use Google Search, ensure you provide accurate, recent information.",
@@ -233,6 +280,13 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
               <p className={`text-[8px] font-black tracking-[0.1em] uppercase ${textMuted}`}>SECURE_UPLINK_ACTIVE</p>
             </div>
           </div>
+          <button 
+            onClick={fetchDynamicSuggestions}
+            disabled={loadingSuggestions}
+            className={`text-[8px] font-black uppercase tracking-widest text-emerald-500/40 hover:text-emerald-500 transition-colors ${loadingSuggestions ? 'animate-spin' : ''}`}
+          >
+            {loadingSuggestions ? '○' : '↺'}
+          </button>
         </div>
 
         <SentimentPulse theme={theme} />
@@ -276,6 +330,24 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
         </div>
 
         <div className={`p-6 pt-2 border-t transition-colors ${theme === 'dark' ? 'border-white/5 bg-white/[0.01]' : 'border-slate-100 bg-slate-50/30'}`}>
+          {/* Suggestions Layer */}
+          <div className="mb-4 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-2 duration-700">
+            {suggestions.map((suggestion, i) => (
+              <button
+                key={i}
+                onClick={() => sendMessage(suggestion)}
+                disabled={isTyping}
+                className={`px-3 py-1.5 rounded-full text-[9px] font-black tracking-tight border transition-all duration-300 hover:scale-105 active:scale-95 text-left disabled:opacity-50 ${
+                  theme === 'dark' 
+                    ? 'bg-white/[0.02] border-white/10 text-white/40 hover:text-white/80 hover:border-white/20' 
+                    : 'bg-white border-slate-200 text-slate-500 hover:text-slate-900 shadow-sm'
+                }`}
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+
           <div className={`flex items-center gap-3 p-2 rounded-[1.25rem] border transition-all shadow-sm ${inputBg}`}>
             <input 
               type="text"
@@ -286,7 +358,7 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
               className={`flex-grow bg-transparent px-4 py-2 text-xs font-medium focus:outline-none placeholder:opacity-40 tracking-tight ${textMain}`}
             />
             <button 
-              onClick={sendMessage}
+              onClick={() => sendMessage()}
               disabled={!input.trim() || isTyping}
               className={`p-2.5 rounded-xl transition-all shadow-lg active:scale-90 disabled:opacity-30 ${
                 theme === 'dark' ? 'bg-emerald-500 text-black hover:bg-emerald-400' : 'bg-slate-900 text-white hover:bg-black'
