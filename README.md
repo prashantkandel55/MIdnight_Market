@@ -5,7 +5,7 @@
 # Midnight Market
 
 A modern cryptocurrency market dashboard featuring real-time data, interactive charts, and AI-powered insights. Track blue-chip cryptocurrencies and memecoins across multiple blockchains with comprehensive market analysis tools.
-
+//YOU NEED GEMINI API KEY for chatbot features//
 
 ## Features
 
