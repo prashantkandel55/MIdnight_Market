@@ -10,6 +10,23 @@ type SortKey = 'market_cap' | 'price_change' | 'volume' | 'name';
 type SortOrder = 'desc' | 'asc';
 type Theme = 'dark' | 'light';
 
+// Updated Logo component to use your PNG file
+const Logo: React.FC<{ className?: string }> = ({ className = "w-16 h-16" }) => (
+  <div className={`${className} relative group`}>
+    {/* Subtle glow effect behind the PNG */}
+    <div className="absolute inset-0 bg-cyan-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+    <img 
+      src="./favicon.png" 
+      alt="Midnight Markets Logo" 
+      className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_15px_rgba(0,242,255,0.3)]"
+      onError={(e) => {
+        // Fallback if the png is missing
+        e.currentTarget.style.display = 'none';
+      }}
+    />
+  </div>
+);
+
 const BackgroundAnimation: React.FC<{ theme: Theme; mode: MarketMode }> = ({ theme, mode }) => {
   const isDark = theme === 'dark';
   const isMemecoin = mode === 'memecoins';
@@ -259,8 +276,9 @@ const App: React.FC = () => {
         <LiveClock theme={theme} />
 
         <header className={`p-12 pb-12 flex flex-col items-center sticky top-0 backdrop-blur-3xl z-40 border-b transition-all duration-500 ${headerBg}`}>
-          <div className="text-center mb-10">
-            <h1 className="text-4xl font-black uppercase tracking-[1em] leading-none mb-4 animate-in fade-in zoom-in-95 duration-700">Midnight Market</h1>
+          <div className="text-center mb-10 flex flex-col items-center gap-4">
+            <Logo className="w-24 h-24 mb-2 animate-in fade-in zoom-in-50 duration-1000" />
+            <h1 className="text-4xl font-black uppercase tracking-[1em] leading-none mb-2 animate-in fade-in slide-in-from-top-4 duration-700">Midnight Markets</h1>
             <div className={`text-[10px] uppercase font-black tracking-[0.4em] ${theme === 'dark' ? 'text-white/20' : 'text-slate-400'}`}>Global Volatility Surveillance Uplink</div>
           </div>
 
@@ -359,7 +377,7 @@ const App: React.FC = () => {
           <div className="flex items-center gap-12">
             <span className="flex items-center gap-3">
                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
-               MIDNIGHT_MARKET // {marketMode.toUpperCase()}
+               MIDNIGHT_MARKETS // {marketMode.toUpperCase()}
             </span>
             <span>UPLINK_ENCRYPTED</span>
             <span className="mono">ACTIVE_SENSORS: {assets.length}</span>
