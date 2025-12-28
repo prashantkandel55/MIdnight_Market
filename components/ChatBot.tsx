@@ -14,6 +14,8 @@ interface SentimentItem {
   sentiment: 'positive' | 'negative' | 'neutral';
 }
 
+const HAS_API_KEY = !!process.env.API_KEY;
+
 const SentimentPulse: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
   const [items, setItems] = useState<SentimentItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -21,6 +23,23 @@ const SentimentPulse: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
 
   const analyzePulse = async () => {
     setLoading(true);
+    
+    // Fallback Mock Data if API Key is missing
+    if (!HAS_API_KEY) {
+      setTimeout(() => {
+        setItems([
+          { headline: "Institutional accumulation detected in major L1 assets.", sentiment: 'positive' },
+          { headline: "Macro volatility expected ahead of regional economic data.", sentiment: 'neutral' },
+          { headline: "Liquidity drain observed in high-risk memecoin sectors.", sentiment: 'negative' },
+          { headline: "Cross-chain bridge volume hits 30-day high.", sentiment: 'positive' },
+          { headline: "Exchange reserves continue to trend downwards.", sentiment: 'positive' }
+        ]);
+        setOverall('Bullish');
+        setLoading(false);
+      }, 1500);
+      return;
+    }
+
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
@@ -55,6 +74,12 @@ const SentimentPulse: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
       setOverall(data.overallSentiment || 'Neutral');
     } catch (error: any) {
       console.error("Pulse analysis failed:", error);
+      // Failover to mock on error
+      setItems([
+        { headline: "Error fetching live pulse. Using cached surveillance data.", sentiment: 'neutral' },
+        { headline: "Market volatility remains high across primary sectors.", sentiment: 'neutral' }
+      ]);
+      setOverall('Unstable');
     } finally {
       setLoading(false);
     }
@@ -152,6 +177,17 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
   }, [isOpen]);
 
   const fetchDynamicSuggestions = async () => {
+    if (!HAS_API_KEY) {
+      // Default high-quality static suggestions
+      setSuggestions([
+        "Explain current liquidity flows",
+        "Top AI-narrative tokens?",
+        "Bitcoin halving impact?",
+        "Assess Ethereum network health"
+      ]);
+      return;
+    }
+
     setLoadingSuggestions(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -184,6 +220,23 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
     }
   };
 
+  const getSimulatedResponse = (userInput: string): string => {
+    const input = userInput.toLowerCase();
+    if (input.includes('bitcoin') || input.includes('btc')) {
+      return "Bitcoin is currently testing major psychological resistance levels. On-chain data suggests institutional wallets are in a 'holding' phase, while retail sentiment remains cautiously optimistic. Watch the 200-day moving average for trend confirmation.";
+    }
+    if (input.includes('ethereum') || input.includes('eth')) {
+      return "Ethereum's network activity has seen a slight uptick in L2 gas consumption. Deflationary pressures are mounting as burn rates exceed issuance. The current focus is on upcoming network upgrades aimed at scalability.";
+    }
+    if (input.includes('memecoin') || input.includes('meme')) {
+      return "The memecoin sector is currently high-volatility with significant rotation observed into AI-themed assets. While liquidity is thin, social dominance for top-tier memes remains strong. High risk, high reward dynamics are dominant here.";
+    }
+    if (input.includes('analysis') || input.includes('market')) {
+      return "Broad market structure remains in a consolidation phase. Dominance levels are shifting as capital rotates into specific sector narratives. Macro indicators point towards a period of volatility as traders await clarity on global fiscal policies.";
+    }
+    return "The terminal is operating in simulated intelligence mode. Current data streams indicate localized volatility and increasing accumulation in blue-chip assets. Interrogate specific tickers for deeper surveillance.";
+  }
+
   const sendMessage = async (overrideInput?: string) => {
     const textToSend = overrideInput || input;
     if (!textToSend.trim() || isTyping) return;
@@ -197,6 +250,19 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
+
+    if (!HAS_API_KEY) {
+      setTimeout(() => {
+        const modelMessage: Message = {
+          role: 'model',
+          text: getSimulatedResponse(textToSend),
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setMessages(prev => [...prev, modelMessage]);
+        setIsTyping(false);
+      }, 1000);
+      return;
+    }
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -227,7 +293,7 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
       console.error("Chat error:", error);
       setMessages(prev => [...prev, {
         role: 'model',
-        text: "CRITICAL_ERROR: Signal interference. Please retry.",
+        text: getSimulatedResponse(textToSend) + " (Note: Live uplink failed, using simulated data).",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }]);
     } finally {
@@ -272,12 +338,12 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
         <div className={`p-6 border-b flex items-center justify-between transition-colors ${theme === 'dark' ? 'border-white/5 bg-white/[0.02]' : 'border-slate-100 bg-slate-50/50'}`}>
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-              <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping opacity-50"></div>
+              <div className={`w-2.5 h-2.5 rounded-full ${HAS_API_KEY ? 'bg-emerald-500' : 'bg-orange-500'}`}></div>
+              <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${HAS_API_KEY ? 'bg-emerald-500 animate-ping' : 'bg-orange-500'} opacity-50`}></div>
             </div>
             <div>
               <h4 className={`text-[10px] font-black uppercase tracking-[0.3em] ${textMain}`}>Midnight_Assistant</h4>
-              <p className={`text-[8px] font-black tracking-[0.1em] uppercase ${textMuted}`}>SECURE_UPLINK_ACTIVE</p>
+              <p className={`text-[8px] font-black tracking-[0.1em] uppercase ${textMuted}`}>{HAS_API_KEY ? 'SECURE_UPLINK_ACTIVE' : 'SIMULATED_MODE_ACTIVE'}</p>
             </div>
           </div>
           <button 
@@ -370,7 +436,7 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
             </button>
           </div>
           <p className={`mt-3 text-[7px] font-black uppercase tracking-[0.4em] text-center opacity-30 ${textMuted}`}>
-            Encrypted Session
+            {HAS_API_KEY ? 'Encrypted Session' : 'Local Sandbox Active'}
           </p>
         </div>
       </div>
