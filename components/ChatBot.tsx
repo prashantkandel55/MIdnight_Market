@@ -24,19 +24,28 @@ const SentimentPulse: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
   const analyzePulse = async () => {
     setLoading(true);
     
-    // Fallback Mock Data if API Key is missing
     if (!HAS_API_KEY) {
-      setTimeout(() => {
-        setItems([
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const scenarios = [
+        [
           { headline: "Institutional accumulation detected in major L1 assets.", sentiment: 'positive' },
           { headline: "Macro volatility expected ahead of regional economic data.", sentiment: 'neutral' },
           { headline: "Liquidity drain observed in high-risk memecoin sectors.", sentiment: 'negative' },
           { headline: "Cross-chain bridge volume hits 30-day high.", sentiment: 'positive' },
           { headline: "Exchange reserves continue to trend downwards.", sentiment: 'positive' }
-        ]);
-        setOverall('Bullish');
-        setLoading(false);
-      }, 1500);
+        ],
+        [
+          { headline: "Regulatory clarity incoming for stablecoin issuers.", sentiment: 'positive' },
+          { headline: "DeFi total value locked hits yearly resistance.", sentiment: 'neutral' },
+          { headline: "Flash loan exploit reported on minor L2 protocol.", sentiment: 'negative' },
+          { headline: "Bitcoin dominance reaches peak local levels.", sentiment: 'neutral' },
+          { headline: "Hashrate hits all-time high following hardware upgrades.", sentiment: 'positive' }
+        ]
+      ];
+      const selected = scenarios[Math.floor(Math.random() * scenarios.length)];
+      setItems(selected as SentimentItem[]);
+      setOverall(selected.filter(s => s.sentiment === 'positive').length >= 3 ? 'Bullish' : 'Consolidating');
+      setLoading(false);
       return;
     }
 
@@ -74,7 +83,6 @@ const SentimentPulse: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
       setOverall(data.overallSentiment || 'Neutral');
     } catch (error: any) {
       console.error("Pulse analysis failed:", error);
-      // Failover to mock on error
       setItems([
         { headline: "Error fetching live pulse. Using cached surveillance data.", sentiment: 'neutral' },
         { headline: "Market volatility remains high across primary sectors.", sentiment: 'neutral' }
@@ -84,6 +92,12 @@ const SentimentPulse: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!HAS_API_KEY && items.length === 0) {
+      analyzePulse();
+    }
+  }, []);
 
   const textMuted = theme === 'dark' ? 'text-white/20' : 'text-slate-400';
   const textMain = theme === 'dark' ? 'text-white/60' : 'text-slate-700';
@@ -178,7 +192,6 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
 
   const fetchDynamicSuggestions = async () => {
     if (!HAS_API_KEY) {
-      // Default high-quality static suggestions
       setSuggestions([
         "Explain current liquidity flows",
         "Top AI-narrative tokens?",
@@ -221,20 +234,32 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
   };
 
   const getSimulatedResponse = (userInput: string): string => {
-    const input = userInput.toLowerCase();
+    const input = userInput.toLowerCase().trim();
+    
+    // Commands
+    if (input === '/help') {
+      return "Midnight Terminal v2.0-Alpha Available Commands:\n/status - System Health Check\n/market - General analysis\n/sentiment - Direct pulse reading\nOr simply inquire about specific assets like BTC, ETH, or Memecoins.";
+    }
+    if (input === '/status') {
+      return "SYSTEM_STATUS: NOMINAL\nLATENCY: 12ms\nUPLINK: ENCRYPTED_SIM_MODE\nLOCAL_CACHE: ACTIVE\nAll monitoring sensors reporting green.";
+    }
+
     if (input.includes('bitcoin') || input.includes('btc')) {
-      return "Bitcoin is currently testing major psychological resistance levels. On-chain data suggests institutional wallets are in a 'holding' phase, while retail sentiment remains cautiously optimistic. Watch the 200-day moving average for trend confirmation.";
+      return "Bitcoin is currently testing major psychological resistance levels near recent highs. On-chain data suggests institutional wallets are in a 'holding' phase, while retail sentiment remains cautiously optimistic. Watch the 200-day moving average for trend confirmation.";
     }
     if (input.includes('ethereum') || input.includes('eth')) {
-      return "Ethereum's network activity has seen a slight uptick in L2 gas consumption. Deflationary pressures are mounting as burn rates exceed issuance. The current focus is on upcoming network upgrades aimed at scalability.";
+      return "Ethereum's network activity has seen a slight uptick in L2 gas consumption. Deflationary pressures are mounting as burn rates exceed issuance. The current focus is on upcoming network upgrades aimed at scalability and cost reduction.";
     }
     if (input.includes('memecoin') || input.includes('meme')) {
-      return "The memecoin sector is currently high-volatility with significant rotation observed into AI-themed assets. While liquidity is thin, social dominance for top-tier memes remains strong. High risk, high reward dynamics are dominant here.";
+      return "The memecoin sector is currently experiencing high-volatility with significant rotation observed into AI-themed assets. While liquidity is concentrated in top-tier assets like DOGE and PEPE, social dominance for micro-cap tokens remains unstable. High risk, high reward dynamics are dominant.";
+    }
+    if (input.includes('ai') || input.includes('narrative')) {
+      return "The AI-narrative tokens are leading the current sector recovery. Projects focusing on decentralized compute and data-indexing are seeing the highest relative volume. Correlation with traditional tech stock performance remains strong.";
     }
     if (input.includes('analysis') || input.includes('market')) {
-      return "Broad market structure remains in a consolidation phase. Dominance levels are shifting as capital rotates into specific sector narratives. Macro indicators point towards a period of volatility as traders await clarity on global fiscal policies.";
+      return "Broad market structure remains in a consolidation phase. Dominance levels are shifting as capital rotates into specific sector narratives. Macro indicators point towards a period of volatility as traders await clarity on global interest rate decisions.";
     }
-    return "The terminal is operating in simulated intelligence mode. Current data streams indicate localized volatility and increasing accumulation in blue-chip assets. Interrogate specific tickers for deeper surveillance.";
+    return "The terminal is operating in simulated intelligence mode. Current data streams indicate localized volatility and increasing accumulation in blue-chip assets. Interrogate specific tickers or narratives for deeper surveillance, or type /help for commands.";
   }
 
   const sendMessage = async (overrideInput?: string) => {
@@ -342,8 +367,8 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
               <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${HAS_API_KEY ? 'bg-emerald-500 animate-ping' : 'bg-orange-500'} opacity-50`}></div>
             </div>
             <div>
-              <h4 className={`text-[10px] font-black uppercase tracking-[0.3em] ${textMain}`}>Midnight_Assistant</h4>
-              <p className={`text-[8px] font-black tracking-[0.1em] uppercase ${textMuted}`}>{HAS_API_KEY ? 'SECURE_UPLINK_ACTIVE' : 'SIMULATED_MODE_ACTIVE'}</p>
+              <h4 className={`text-[10px] font-black uppercase tracking-[0.3em] ${textMain}`}>Midnight_Terminal</h4>
+              <p className={`text-[8px] font-black tracking-[0.1em] uppercase ${textMuted}`}>{HAS_API_KEY ? 'SECURE_UPLINK_ACTIVE' : 'LOCAL_INTELLIGENCE_ACTIVE'}</p>
             </div>
           </div>
           <button 
@@ -374,7 +399,7 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
 
           {messages.map((msg, i) => (
             <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-500`} style={{ animationDelay: `${Math.min(i * 100, 300)}ms` }}>
-              <div className={`max-w-[85%] px-5 py-3.5 rounded-2xl text-[11px] leading-relaxed font-medium transition-all ${
+              <div className={`max-w-[85%] px-5 py-3.5 rounded-2xl text-[11px] leading-relaxed font-medium transition-all whitespace-pre-line ${
                 msg.role === 'user' 
                   ? theme === 'dark' ? 'bg-emerald-500 text-black shadow-[0_10px_20px_-5px_rgba(16,185,129,0.3)]' : 'bg-slate-900 text-white shadow-xl'
                   : theme === 'dark' ? 'bg-white/[0.04] border border-white/10 text-white/90 shadow-sm' : 'bg-slate-50 border border-slate-200 text-slate-800 shadow-sm'
@@ -396,7 +421,6 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
         </div>
 
         <div className={`p-6 pt-2 border-t transition-colors ${theme === 'dark' ? 'border-white/5 bg-white/[0.01]' : 'border-slate-100 bg-slate-50/30'}`}>
-          {/* Suggestions Layer */}
           <div className="mb-4 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-2 duration-700">
             {suggestions.map((suggestion, i) => (
               <button
@@ -436,7 +460,7 @@ const ChatBot: React.FC<{ theme: 'dark' | 'light' }> = ({ theme }) => {
             </button>
           </div>
           <p className={`mt-3 text-[7px] font-black uppercase tracking-[0.4em] text-center opacity-30 ${textMuted}`}>
-            {HAS_API_KEY ? 'Encrypted Session' : 'Local Sandbox Active'}
+            {HAS_API_KEY ? 'Encrypted Session' : 'Local Terminal Logic Active'}
           </p>
         </div>
       </div>
